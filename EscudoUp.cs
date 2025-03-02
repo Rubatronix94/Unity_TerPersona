@@ -5,50 +5,52 @@ using UnityEngine.InputSystem;
 
 public class EscudoUp : MonoBehaviour
 {
+    private InputAction botonXAction;
+    private bool botonPulsado = false;
 
-    private PlayerInputMap playerInput;
-    private PlayerInputMap.OnFootActions OnFoot;//<-PRUEBA 1
+    private Animator animator;
+    private string animatorBoolParameter = "IsShieldUp";
 
-   //AUTO INPUT MANaGER private InputManager inputManager; // Referencia al InputManager
-    private InputAction botonXAction; // Acción específica para el botón Bloqueando
-    private bool botonPulsado = false; // Estado del botón
+    // Asegúrate de tener una referencia al PlayerInputMap
+    public PlayerInputMap playerInput;
 
-    private Animator animator; // Referencia al Animator
-    private string animatorBoolParameter = "IsShieldUp"; // Nombre del parámetro booleano en el Animator
-
-    void Awake()
+    void Start()
     {
-        playerInput = new PlayerInputMap();
-        OnFoot = playerInput.OnFoot;
+        animator = GetComponent<Animator>();
+        if (animator == null)
+        {
+            Debug.LogWarning("No se encontró un componente Animator en el GameObject.");
+        }
 
-        // Obtén la acción "Bloqueando" desde el InputManager
-        botonXAction = OnFoot.Bloqueando; // Asegúrate de que Bloqueando exista en el esquema
+        // Aquí inicializas el PlayerInputMap
+        playerInput = new PlayerInputMap();
+        botonXAction = playerInput.OnFoot.Bloqueando; // Usa la acción directamente
+
         if (botonXAction == null)
         {
             Debug.LogError("No se encontró la acción 'Bloqueando' en el esquema de entrada.");
             return;
         }
+        botonXAction.performed += ctx => { botonPulsado = true; ActivarEscudo(); Debug.Log("Boton presionado."); };
+        botonXAction.canceled += ctx => { botonPulsado = false; ActivarEscudo(); Debug.Log("Boton soltado."); };
 
-        // Configura los eventos para detectar cuándo el botón es presionado o soltado
-        botonXAction.performed += ctx => botonPulsado = true;
-        botonXAction.canceled += ctx => botonPulsado = false;
-
-        // Obtén el componente Animator
-        animator = GetComponent<Animator>();
-        if (animator == null)
-        {
-            Debug.LogError("No se encontró un componente Animator en este GameObject.");
-        }
+        // Recuerda habilitar el mapa de acciones
+        playerInput.OnFoot.Enable();
     }
 
-    void Update()
+    // Método público para activar o desactivar el escudo
+    public void ActivarEscudo()
     {
         if (animator != null)
         {
-            // Actualiza el parámetro del Animator según el estado del botón
+            Debug.Log("Activando escudo con valor: " + botonPulsado);
             animator.SetBool(animatorBoolParameter, botonPulsado);
         }
     }
-   
 
+    void OnDestroy()
+    {
+        // No olvides deshabilitar el mapa de acciones cuando ya no se necesite
+        playerInput.OnFoot.Disable();
+    }
 }
