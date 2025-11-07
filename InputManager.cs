@@ -1,61 +1,57 @@
-
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System;
 
 
-    public class InputManager : MonoBehaviour
+public class InputManager : MonoBehaviour
+{
+    private PlayerInputMap playerInput;
+    private PlayerInputMap.OnFootActions onFoot;
+
+    private PlayerMotor motor;
+   // private EscudoUp escudo; // Referencia al script EscudoUp
+    private PlayerCombat meleeHandler;
+
+    // ATAQUES
+    public event System.Action AtaqueLigero;
+    public event System.Action OnAttack2;
+
+    public event Action OnBlockStart;
+    public event Action OnBlockEnd;
+
+    private void Awake()
     {
-        private PlayerInputMap playerInput;
-        private PlayerInputMap.OnFootActions onFoot;
+        playerInput = new PlayerInputMap();
+        onFoot = playerInput.OnFoot;
 
-        private PlayerLocomotion motor;
-     /*   private EscudoUp escudo; // Referencia al script EscudoUp
-        private MeleeHandler meleeHandler;
+        motor = GetComponent<PlayerMotor>();
+        meleeHandler = GetComponent<PlayerCombat>();
 
         // ATAQUES
-        public event System.Action OnAttack1;
-        public event System.Action OnAttack2;
-     */
+        onFoot.AtaqueLigero.performed += ctx => AtaqueLigero?.Invoke();
+        onFoot.AtaquePesado.performed += ctx => OnAttack2?.Invoke();
 
-        private void Awake()
-        {
-            playerInput = new PlayerInputMap();
-            onFoot = playerInput.OnFoot;
+        // BLOQUEO (mantener pulsado)
+        onFoot.Bloqueo.performed += ctx => OnBlockStart?.Invoke();
+        onFoot.Bloqueo.canceled += ctx => OnBlockEnd?.Invoke();
 
-            motor = GetComponent<PlayerLocomotion>();
-        /*    escudo = GetComponent<EscudoUp>();
-            meleeHandler = GetComponent<MeleeHandler>();
+        // FIJAR OBJETIVO
+        onFoot.FijarObjetivo.performed += ctx => motor.FijarObjetivo();
 
-            if (motor == null || escudo == null || meleeHandler == null)
-            {
-                Debug.LogError("Missing required component(s) on the GameObject.");
-                enabled = false;
-                return;
-            }
-
-            // Configurar eventos de las acciones
-            onFoot.EquiparEspada.performed += ctx => motor.EquiparEspada();
-            onFoot.Bloqueando.performed += ctx => escudo.ActivarEscudo();
-            onFoot.Attack1.performed += ctx => OnAttack1?.Invoke();
-            onFoot.Attack2.performed += ctx => OnAttack2?.Invoke();
-
-
-            onFoot.FijarObjetivo.performed += ctx => motor.FijarObjetivo();
-        */
-        }
-
-        private void FixedUpdate()
-        {
-            motor.ProcessMove(onFoot.Movimiento.ReadValue<Vector2>());
-        }
-
-        private void OnEnable()
-        {
-            onFoot.Enable();
-        }
-
-        private void OnDisable()
-        {
-            onFoot.Disable();
-        }
     }
+
+    private void FixedUpdate()
+    {
+        motor.ProcessMove(onFoot.Movimiento.ReadValue<Vector2>());
+    }
+
+    private void OnEnable()
+    {
+        onFoot.Enable();
+    }
+
+    private void OnDisable()
+    {
+        onFoot.Disable();
+    }
+}
